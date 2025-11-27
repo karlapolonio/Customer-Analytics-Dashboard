@@ -92,6 +92,7 @@ filtered_df = df[
 st.sidebar.markdown("---")
 st.sidebar.write(f"**Records:** {len(filtered_df)} of {len(df)}")
 
+# Key Metrics Row
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -110,153 +111,167 @@ with col4:
     avg_rating = filtered_df['Review Rating'].mean()
     st.metric("Average Rating", f"{avg_rating:.1f}/5")
 
-# Row 1: Two columns for first two charts
+# Row 1: Seasonal Analysis and Payment Methods
 col1, col2 = st.columns(2)
 
 with col1:
-    # Purchase Amount by Gender
-    fig1 = px.box(
-        filtered_df,
-        x='Gender',
-        y='Purchase Amount (USD)',
-        title='Purchase Amount Distribution by Gender',
-        color='Gender'
-    )
-    fig1.update_layout(
-        xaxis_title="Gender",
-        yaxis_title="Purchase Amount (USD)",
-        showlegend=False
-    )
-    st.plotly_chart(fig1, use_container_width=True)
-    
-    st.markdown("""
-    **Insight:** This box plot shows the distribution of purchase amounts across different genders. 
-    Look for differences in median spending and variability between groups.
-    """)
-
-with col2:
     # Sales by Season
     season_sales = filtered_df.groupby('Season')['Purchase Amount (USD)'].sum().reset_index()
-    fig2 = px.pie(
+    fig1 = px.pie(
         season_sales,
         values='Purchase Amount (USD)',
         names='Season',
         title='Sales Distribution by Season',
         hole=0.4
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig1, use_container_width=True)
     
     st.markdown("""
     **Insight:** The donut chart reveals seasonal purchasing patterns. 
-    Identify which seasons drive the highest revenue.
+    Identify which seasons drive the highest revenue for strategic planning.
     """)
 
-# Row 2: USA Map and Scatter Plot
-col3, col4 = st.columns(2)
-
-with col3:
-    # USA Map - Sales by State
-    state_sales = filtered_df.groupby(['Location', 'State_Code'])['Purchase Amount (USD)'].agg(['sum', 'count']).reset_index()
-    state_sales.columns = ['Location', 'State_Code', 'Total_Sales', 'Customer_Count']
-    
-    fig_map = px.choropleth(
-        state_sales,
-        locations='State_Code',
-        locationmode='USA-states',
-        color='Total_Sales',
-        scope='usa',
-        title='USA Sales Distribution by State',
-        color_continuous_scale='Blues',
-        hover_data=['Location', 'Total_Sales', 'Customer_Count'],
-        labels={'Total_Sales': 'Total Sales ($)', 'Customer_Count': 'Number of Customers'}
-    )
-    
-    fig_map.update_layout(
-        geo=dict(
-            lakecolor='rgb(255, 255, 255)',
-            landcolor='rgb(217, 217, 217)',
-        ),
-        height=500
-    )
-    
-    st.plotly_chart(fig_map, use_container_width=True)
-    
-    st.markdown("""
-    **Insight:** The choropleth map shows sales distribution across US states. 
-    Darker shades indicate higher sales volumes. Hover over states to see exact numbers.
-    """)
-
-# Row 3: Two columns for location analysis and payment methods
-col5, col6 = st.columns(2)
-
-with col4:
-    # Top Locations by Sales
-    location_sales = filtered_df.groupby('Location')['Purchase Amount (USD)'].sum().nlargest(5).reset_index()
-    fig4 = px.bar(
-        location_sales,
-        x='Purchase Amount (USD)',
-        y='Location',
-        orientation='h',
-        title='Top 5 Locations by Sales',
-        color='Purchase Amount (USD)'
-    )
-    fig4.update_layout(
-        xaxis_title="Total Sales (USD)",
-        yaxis_title="Location"
-    )
-    st.plotly_chart(fig4, use_container_width=True)
-    
-    st.markdown("""
-    **Insight:** Horizontal bar chart highlighting top-performing locations. 
-    Useful for identifying regional performance and targeting marketing efforts.
-    """)
-
-with col5:
+with col2:
     # Payment Method Analysis
     payment_distribution = filtered_df['Payment Method'].value_counts().reset_index()
     payment_distribution.columns = ['Payment Method', 'Count']
     
-    fig5 = px.bar(
+    fig2 = px.bar(
         payment_distribution,
         x='Payment Method',
         y='Count',
         title='Payment Method Distribution',
-        color='Payment Method'
+        color='Payment Method',
+        color_discrete_sequence=px.colors.qualitative.Set2
     )
-    st.plotly_chart(fig5, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True)
     
     st.markdown("""
     **Insight:** Bar chart showing customer preferences for payment methods. 
     Useful for optimizing payment processing and customer experience.
     """)
 
-# Row 4: Additional charts
-col7, col8 = st.columns(2)
+# Row 2: USA Map (Full Width)
+st.subheader("Geographic Distribution")
+# USA Map - Sales by State
+state_sales = filtered_df.groupby(['Location', 'State_Code'])['Purchase Amount (USD)'].agg(['sum', 'count']).reset_index()
+state_sales.columns = ['Location', 'State_Code', 'Total_Sales', 'Customer_Count']
 
-with col6:
-    # Average purchase by payment method
-    avg_by_payment = filtered_df.groupby('Payment Method')['Purchase Amount (USD)'].mean().reset_index()
-    fig6 = px.bar(
-        avg_by_payment,
-        x='Payment Method',
-        y='Purchase Amount (USD)',
-        title='Average Purchase Amount by Payment Method',
-        color='Payment Method'
+fig_map = px.choropleth(
+    state_sales,
+    locations='State_Code',
+    locationmode='USA-states',
+    color='Total_Sales',
+    scope='usa',
+    title='USA Sales Distribution by State',
+    color_continuous_scale='Blues',
+    hover_data=['Location', 'Total_Sales', 'Customer_Count'],
+    labels={'Total_Sales': 'Total Sales ($)', 'Customer_Count': 'Number of Customers'}
+)
+
+fig_map.update_layout(
+    geo=dict(
+        lakecolor='rgb(255, 255, 255)',
+        landcolor='rgb(217, 217, 217)',
+    ),
+    height=500
+)
+
+st.plotly_chart(fig_map, use_container_width=True)
+
+st.markdown("""
+**Insight:** The choropleth map shows sales distribution across US states. 
+Darker shades indicate higher sales volumes. Hover over states to see exact numbers and customer counts.
+""")
+
+# Row 3: Top Locations and Customer Distribution
+col3, col4 = st.columns(2)
+
+with col3:
+    # Top Locations by Sales
+    location_sales = filtered_df.groupby('Location')['Purchase Amount (USD)'].sum().nlargest(6).reset_index()
+    fig3 = px.bar(
+        location_sales,
+        x='Purchase Amount (USD)',
+        y='Location',
+        orientation='h',
+        title='Top 6 Locations by Sales',
+        color='Purchase Amount (USD)',
+        color_continuous_scale='Viridis'
     )
-    st.plotly_chart(fig6, use_container_width=True)
+    fig3.update_layout(
+        xaxis_title="Total Sales (USD)",
+        yaxis_title="Location"
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+    
+    st.markdown("""
+    **Insight:** Horizontal bar chart highlighting top-performing locations. 
+    Useful for identifying regional performance and targeting marketing efforts.
+    """)
 
-with col7:
-    # Customer count by state (complementary to the map)
+with col4:
+    # Customer count by state
     state_customers = filtered_df.groupby(['Location', 'State_Code']).size().reset_index(name='Customer_Count')
-    fig7 = px.bar(
+    fig4 = px.bar(
         state_customers.nlargest(8, 'Customer_Count'),
         x='Customer_Count',
         y='Location',
         orientation='h',
         title='Top 8 States by Customer Count',
-        color='Customer_Count'
+        color='Customer_Count',
+        color_continuous_scale='Plasma'
     )
-    st.plotly_chart(fig7, use_container_width=True)
+    st.plotly_chart(fig4, use_container_width=True)
+    
+    st.markdown("""
+    **Insight:** Shows states with the highest number of unique customers. 
+    Compare with sales data to identify high-value customer regions.
+    """)
+
+# Row 4: Additional Analysis
+col5, col6 = st.columns(2)
+
+with col5:
+    # Average purchase by payment method
+    avg_by_payment = filtered_df.groupby('Payment Method')['Purchase Amount (USD)'].mean().reset_index()
+    fig5 = px.bar(
+        avg_by_payment,
+        x='Payment Method',
+        y='Purchase Amount (USD)',
+        title='Average Purchase Amount by Payment Method',
+        color='Payment Method',
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig5.update_layout(
+        yaxis_title="Average Purchase Amount (USD)"
+    )
+    st.plotly_chart(fig5, use_container_width=True)
+    
+    st.markdown("""
+    **Insight:** Compare average transaction values across different payment methods. 
+    Higher averages may indicate customer preferences or payment limitations.
+    """)
+
+with col6:
+    # Review Rating Distribution
+    rating_distribution = filtered_df['Review Rating'].value_counts().sort_index().reset_index()
+    rating_distribution.columns = ['Review Rating', 'Count']
+    
+    fig6 = px.bar(
+        rating_distribution,
+        x='Review Rating',
+        y='Count',
+        title='Customer Review Rating Distribution',
+        color='Review Rating',
+        color_continuous_scale='RdYlGn'
+    )
+    st.plotly_chart(fig6, use_container_width=True)
+    
+    st.markdown("""
+    **Insight:** Distribution of customer review ratings. 
+    Monitor customer satisfaction levels and identify areas for improvement.
+    """)
 
 # Additional Insights Section
 st.header("Key Insights & Recommendations")
@@ -266,24 +281,24 @@ insight_col1, insight_col2 = st.columns(2)
 with insight_col1:
     st.subheader("Patterns Discovered")
     st.markdown("""
-    - **Geographic Distribution**: Sales concentration across US states (see map visualization)
-    - **Seasonal Trends**: Identify which seasons drive highest revenue
-    - **Demographic Patterns**: Understand spending across age groups and genders
-    - **Regional Performance**: Top-performing locations and state-level preferences
-    - **Payment Preferences**: Customer preferences for payment methods
-    - **Loyalty Indicators**: Relationship between previous purchases and spending
+    - **Seasonal Revenue Patterns**: Clear quarterly sales fluctuations and peak performance periods
+    - **Geographic Concentration**: Regional sales hotspots and market penetration by state
+    - **Payment Preferences**: Dominant payment methods and customer behavior trends
+    - **Customer Distribution**: Geographic spread of customer base vs purchasing power
+    - **Regional Performance**: Top-performing locations and underperforming markets
+    - **Customer Satisfaction**: Review rating distribution and service quality indicators
     """)
 
 with insight_col2:
     st.subheader("Business Recommendations")
     st.markdown("""
-    - **Regional Strategy**: Focus marketing efforts on high-performing states
-    - **Targeted Marketing**: Focus on high-performing demographics and locations
-    - **Seasonal Planning**: Optimize inventory for peak seasons
-    - **Loyalty Programs**: Reward frequent customers identified through previous purchases
-    - **Payment Optimization**: Support preferred payment methods
-    - **Geographic Expansion**: Consider expanding in states with high sales density
-    - **Customer Experience**: Improve areas with lower review ratings
+    - **Seasonal Optimization**: Align inventory and marketing with high-revenue quarters
+    - **Regional Strategy**: Focus expansion efforts on high-potential geographic markets
+    - **Payment System Enhancement**: Optimize support for customer-preferred payment methods
+    - **Customer Acquisition**: Target regions with high customer density for loyalty programs
+    - **Performance Benchmarking**: Apply successful strategies from top regions to underperformers
+    - **Quality Improvement**: Address areas with lower review ratings to enhance customer experience
+    - **Resource Allocation**: Direct marketing budgets to top-performing seasons and locations
     """)
 
 # Data summary by location
