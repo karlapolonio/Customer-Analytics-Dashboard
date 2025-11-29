@@ -182,12 +182,7 @@ with col2:
     """)
 
 #######
-# Row 2: USA Map (Full Width)
-#######
-st.subheader("Geographic Distribution")
-
-#######
-# USA Map - Sales by State
+# Row 2: USA Map - Sales by State
 #######
 state_sales = filtered_df.groupby(['Location', 'State_Code'])['Purchase Amount (USD)'].agg(['sum', 'count']).reset_index()
 state_sales.columns = ['Location', 'State_Code', 'Total_Sales', 'Customer_Count']
