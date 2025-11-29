@@ -19,10 +19,14 @@ st.title("Customer Purchase Analytics Dashboard")
 def load_sample_data():
     return pd.read_csv('shopping_behavior.csv')
 
+#######
 # Load data
+#######
 df = load_sample_data()
 
-# Create a state abbreviation mapping for the map
+#######
+# Create US States Abbreviations
+#######
 state_abbreviations = {
     'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
     'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
@@ -37,15 +41,23 @@ state_abbreviations = {
     'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
 }
 
+#######
 # Add state codes to the dataframe
+#######
 df['State_Code'] = df['Location'].map(state_abbreviations)
 
+#######
 # Sidebar filters
+#######
 st.sidebar.header("Filters")
 
+#######
 # Custom multiselect function with "All" option
+#######
 def multiselect_with_all(label, options, default_selection=["All"]):
+    #######
     # Add "All" option to the beginning
+    #######
     all_options = ["All"] + list(options)
     
     selected = st.sidebar.multiselect(
@@ -53,46 +65,60 @@ def multiselect_with_all(label, options, default_selection=["All"]):
         options=all_options,
         default=default_selection
     )
-    
+
+    #######
     # If "All" is selected, return all options (excluding "All")
+    #######
     if "All" in selected:
         return list(options)
     else:
         return selected
 
+#######
 # Gender filter - Only "All" as default
+#######
 gender_filter = multiselect_with_all(
     "Select Gender:",
     options=df['Gender'].unique(),
     default_selection=["All"]
 )
 
+#######
 # Season filter - Only "All" as default
+#######
 season_filter = multiselect_with_all(
     "Select Season:",
     options=df['Season'].unique(),
     default_selection=["All"]
 )
 
+#######
 # Location filter - Only "All" as default
+#######
 location_filter = multiselect_with_all(
     "Select Location:",
     options=df['Location'].unique(),
     default_selection=["All"]
 )
 
+#######
 # Apply filters
+#######
 filtered_df = df[
     (df['Gender'].isin(gender_filter)) &
     (df['Season'].isin(season_filter)) &
     (df['Location'].isin(location_filter))
 ]
 
+#######
 # Display active filters
+#######
 st.sidebar.markdown("---")
 st.sidebar.write(f"**Records:** {len(filtered_df)} of {len(df)}")
 
+#######
 # Key Metrics Row
+#######
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -111,7 +137,9 @@ with col4:
     avg_rating = filtered_df['Review Rating'].mean()
     st.metric("Average Rating", f"{avg_rating:.1f}/5")
 
+#######
 # Row 1: Seasonal Analysis and Payment Methods
+#######
 col1, col2 = st.columns(2)
 
 with col1:
@@ -132,7 +160,9 @@ with col1:
     """)
 
 with col2:
+    #######
     # Payment Method Analysis
+    #######
     payment_distribution = filtered_df['Payment Method'].value_counts().reset_index()
     payment_distribution.columns = ['Payment Method', 'Count']
     
@@ -151,9 +181,14 @@ with col2:
     Useful for optimizing payment processing and customer experience.
     """)
 
+#######
 # Row 2: USA Map (Full Width)
+#######
 st.subheader("Geographic Distribution")
+
+#######
 # USA Map - Sales by State
+#######
 state_sales = filtered_df.groupby(['Location', 'State_Code'])['Purchase Amount (USD)'].agg(['sum', 'count']).reset_index()
 state_sales.columns = ['Location', 'State_Code', 'Total_Sales', 'Customer_Count']
 
@@ -184,11 +219,15 @@ st.markdown("""
 Darker shades indicate higher sales volumes. Hover over states to see exact numbers and customer counts.
 """)
 
+#######
 # Row 3: Top Locations and Customer Distribution
+#######
 col3, col4 = st.columns(2)
 
 with col3:
+    #######
     # Top Locations by Sales
+    #######
     location_sales = filtered_df.groupby('Location')['Purchase Amount (USD)'].sum().nlargest(6).reset_index()
     fig3 = px.bar(
         location_sales,
@@ -211,7 +250,9 @@ with col3:
     """)
 
 with col4:
+    #######
     # Customer count by state
+    #######
     state_customers = filtered_df.groupby(['Location', 'State_Code']).size().reset_index(name='Customer_Count')
     fig4 = px.bar(
         state_customers.nlargest(8, 'Customer_Count'),
@@ -229,11 +270,15 @@ with col4:
     Compare with sales data to identify high-value customer regions.
     """)
 
+#######
 # Row 4: Additional Analysis
+#######
 col5, col6 = st.columns(2)
 
 with col5:
+    #######
     # Average purchase by payment method
+    #######
     avg_by_payment = filtered_df.groupby('Payment Method')['Purchase Amount (USD)'].mean().reset_index()
     fig5 = px.bar(
         avg_by_payment,
@@ -254,7 +299,9 @@ with col5:
     """)
 
 with col6:
+    #######
     # Review Rating Distribution
+    #######
     rating_distribution = filtered_df['Review Rating'].value_counts().sort_index().reset_index()
     rating_distribution.columns = ['Review Rating', 'Count']
     
@@ -273,7 +320,9 @@ with col6:
     Monitor customer satisfaction levels and identify areas for improvement.
     """)
 
+#######
 # Additional Insights Section
+#######
 st.header("Key Insights & Recommendations")
 
 insight_col1, insight_col2 = st.columns(2)
@@ -301,7 +350,9 @@ with insight_col2:
     - **Resource Allocation**: Direct marketing budgets to top-performing seasons and locations
     """)
 
+#######
 # Data summary by location
+#######
 with st.expander("Location Performance Summary"):
     location_summary = filtered_df.groupby('Location').agg({
         'Purchase Amount (USD)': ['sum', 'mean', 'count'],
